@@ -1,1 +1,7 @@
 deploy.sh
+__pycache__/
+myenv/
+*.pyc
+*.pyo
+*.pyd
+.vercel
