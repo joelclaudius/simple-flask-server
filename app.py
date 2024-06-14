@@ -94,7 +94,7 @@ def single_book(id):
     question=None
 
     if request.method == 'GET':
-        cursor.execute("SELECT * FROM question WHERE id=?", (id))
+        cursor.execute("SELECT * FROM question WHERE id=?", (id,))
         rows = cursor.fetchall()
         for r in rows:
             question=r
@@ -105,9 +105,9 @@ def single_book(id):
 
     if request.method == 'PUT':
         sql = """ UPDATE question
-                SET question=?
-                    options=?
-                    correctOptions=?
+                SET question=?,
+                    options=?,
+                    correctOption=?,
                     points=?
                 WHERE id=?"""
         
@@ -123,13 +123,13 @@ def single_book(id):
             'correctOption':correctOption,
             'points':points
         }
-        conn.execute(sql, (question, options, correctOption, points))
+        conn.execute(sql, (question, options, correctOption, points, id))
         conn.commit()
         return jsonify(updated_question)
             
     if request.method =='DELETE':
-        sql=""" DELETE FROM question WHERE id=? """
-        conn.execute(sql, (id))
+        sql=""" DELETE FROM question WHERE id= ? """
+        conn.execute(sql, (id,))
         conn.commit()
         return "The book with id: {} has been deleted.".format(id), 200
             
