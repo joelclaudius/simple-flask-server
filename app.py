@@ -89,34 +89,49 @@ def questions():
 
 @app.route('/question/<int:id>', methods=['GET','PUT','DELETE'])
 def single_book(id):
+    conn = db_connection()
+    cursor = conn.cursor()
+    question=None
+
     if request.method == 'GET':
-        for question in question_list:
-            if question['id']==id:
-                return jsonify(question)
-            pass
+        cursor.execute("SELECT * FROM question WHERE id=?", (id))
+        rows = cursor.fetchall()
+        for r in rows:
+            question=r
+        if question is not None:
+                return jsonify(question), 200
+        else:
+            return'Something went wrong', 404
 
     if request.method == 'PUT':
-        for question in question_list:
-            if question['id']==id:
-                question['question']=request.form['question']
-                question['options']=request.form['options']
-                question['correctOption']=request.form['correctOption']
-                question['points']= request.form['points']
+        sql = """ UPDATE question
+                SET question=?
+                    options=?
+                    correctOptions=?
+                    points=?
+                WHERE id=?"""
+        
+        question=request.form['question']
+        options=request.form['options']
+        correctOption=request.form['correctOption']
+        points= request.form['points']
 
-                updated_question={
-                    'id':id,
-                    'question':question['question'],
-                    'options':question['options'],
-                    'correctOption':question['correctOption'],
-                    'points':question['points']
-                }
-                return jsonify(updated_question)
+        updated_question={
+            'id':id,
+            'question':question,
+            'options':options,
+            'correctOption':correctOption,
+            'points':points
+        }
+        conn.execute(sql, (question, options, correctOption, points))
+        conn.commit()
+        return jsonify(updated_question)
             
     if request.method =='DELETE':
-        for index, question in enumerate(question_list):
-            if question['id']==id:
-                question_list.pop(index)
-                return jsonify(question_list)
+        sql=""" DELETE FROM question WHERE id=? """
+        conn.execute(sql, (id))
+        conn.commit()
+        return "The book with id: {} has been deleted.".format(id), 200
             
 
 
