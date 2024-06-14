@@ -1,4 +1,6 @@
 from flask import Flask, request, jsonify
+import json
+import sqlite3
 
 app = Flask(__name__)
 
@@ -48,34 +50,40 @@ question_list=[
       "points": 10
     },]
 
+def db_connection():
+    conn = None
+    try:
+        conn=sqlite3.connect('questions.sqlite')
+    except sqlite3.error as e:
+        print(e)
+    return conn
 
 @app.route('/questions', methods=['GET', 'POST'])
 def questions():
+    conn = db_connection()
+    cursor = conn.cursor()
     if request.method=='GET':
-        if len(question_list) >0:
-            return jsonify(question_list)
-        else:
-            'Nothing Found', 404
+        cursor=conn.execute("SELECT * FROM question")
+        questions = [
+            dict(id=row[0], question=row[1], options=row[2], correctOption=row[3], point=row[4])
+            for row in cursor.fetchall()
+        ]
+        if questions is not None:
+            return jsonify(questions)
+
 
     if request.method=='POST':
         new_question=request.form['question']
         new_option=request.form['options']
         new_correctOption=request.form['correctOption']
         new_point=request.form['points']
-        iD= question_list[-1]['id']+1
+        
+        sql = """INSERT INTO question (question, options, correctOption, points)
+                VALUES(?, ?, ?, ?)"""
 
-        new_obj={
-            'id':iD,
-            'question':new_question,
-            'options':new_option,
-            'correctOption': new_correctOption,
-            'points':new_option
-        }
-
-        question_list.append(new_obj)
-
-        return jsonify(question_list), 201
-
+        cursor= conn.execute(sql, (new_question, new_option, new_correctOption, new_point))
+        conn.commit()
+        return f"Book with id: {cursor.lastrowid} created successifully", 201
 
 
 
